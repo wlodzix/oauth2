@@ -45,17 +45,20 @@ import 'utils.dart';
 ///
 /// [standard JSON response]: https://tools.ietf.org/html/rfc6749#section-5.1
 Future<Client> resourceOwnerPasswordGrant(
-    Uri authorizationEndpoint, String username, String password,
-    {String? identifier,
-    String? secret,
-    String? otp,
-    Iterable<String>? scopes,
-    bool basicAuth = true,
-    CredentialsRefreshedCallback? onCredentialsRefreshed,
-    http.Client? httpClient,
-    String? delimiter,
-    Map<String, dynamic> Function(MediaType? contentType, String body)?
-        getParameters}) async {
+  Uri authorizationEndpoint,
+  String username,
+  String password, {
+  String? identifier,
+  String? secret,
+  String? otp,
+  Iterable<String>? scopes,
+  bool basicAuth = true,
+  CredentialsRefreshedCallback? onCredentialsRefreshed,
+  http.Client? httpClient,
+  String? delimiter,
+  Map<String, dynamic> Function(MediaType? contentType, String body)?
+      getParameters,
+}) async {
   delimiter ??= ' ';
   var startTime = DateTime.now();
 
@@ -66,7 +69,7 @@ Future<Client> resourceOwnerPasswordGrant(
   };
 
   if (otp != null) {
-    body['otp'] = otp; // Add new field to the map
+    body['otp'] = otp;
   }
 
   var headers = <String, String>{};
@@ -85,15 +88,25 @@ Future<Client> resourceOwnerPasswordGrant(
   }
 
   httpClient ??= http.Client();
-  var response = await httpClient.post(authorizationEndpoint,
-      headers: headers, body: body);
+  var response = await httpClient.post(
+    authorizationEndpoint,
+    headers: headers,
+    body: body,
+  );
 
   var credentials = handleAccessTokenResponse(
-      response, authorizationEndpoint, startTime, scopes?.toList(), delimiter,
-      getParameters: getParameters);
-  return Client(credentials,
-      identifier: identifier,
-      secret: secret,
-      httpClient: httpClient,
-      onCredentialsRefreshed: onCredentialsRefreshed);
+    response,
+    authorizationEndpoint,
+    startTime,
+    scopes?.toList(),
+    delimiter,
+    getParameters: getParameters,
+  );
+  return Client(
+    credentials,
+    identifier: identifier,
+    secret: secret,
+    httpClient: httpClient,
+    onCredentialsRefreshed: onCredentialsRefreshed,
+  );
 }
