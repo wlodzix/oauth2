@@ -10,6 +10,7 @@ import 'package:http_parser/http_parser.dart';
 import 'client.dart';
 import 'credentials.dart';
 import 'handle_access_token_response.dart';
+import 'utils.dart';
 
 /// Obtains credentials using a [resource owner password grant](https://tools.ietf.org/html/rfc6749#section-1.3.3).
 ///
@@ -44,40 +45,48 @@ import 'handle_access_token_response.dart';
 ///
 /// [standard JSON response]: https://tools.ietf.org/html/rfc6749#section-5.1
 Future<Client> resourceOwnerPasswordGrant(
-  Uri authorizationEndpoint,
-  String username,
-  String password, {
-  required String identifier,
-  Iterable<String>? scopes,
-  String? secret,
-  String? otp,
-  CredentialsRefreshedCallback? onCredentialsRefreshed,
-  http.Client? httpClient,
-  String? delimiter,
-  Map<String, dynamic> Function(MediaType? contentType, String body)?
-      getParameters,
-}) async {
+    Uri authorizationEndpoint, String username, String password,
+    {String? identifier,
+    String? secret,
+    String? otp,
+    Iterable<String>? scopes,
+    bool basicAuth = true,
+    CredentialsRefreshedCallback? onCredentialsRefreshed,
+    http.Client? httpClient,
+    String? delimiter,
+    Map<String, dynamic> Function(MediaType? contentType, String body)?
+        getParameters}) async {
   delimiter ??= ' ';
   var startTime = DateTime.now();
 
-  var headers = <String, String>{
-    'Content-Type': 'application/x-www-form-urlencoded'
+  var body = {
+    'grant_type': 'password',
+    'username': username,
+    'password': password,
   };
 
-  final rawBody = [
-    'client_id=$identifier',
-    'username=$username',
-    'password=${Uri.encodeQueryComponent(password)}',
-    'grant_type=password',
-    'otp=$otp',
-  ].join('&');
+  if (otp != null) {
+    body['otp'] = otp; // Add new field to the map
+  }
+
+  var headers = <String, String>{};
+
+  if (identifier != null) {
+    if (basicAuth) {
+      headers['Authorization'] = basicAuthHeader(identifier, secret!);
+    } else {
+      body['client_id'] = identifier;
+      if (secret != null) body['client_secret'] = secret;
+    }
+  }
+
+  if (scopes != null && scopes.isNotEmpty) {
+    body['scope'] = scopes.join(delimiter);
+  }
 
   httpClient ??= http.Client();
-  var response = await httpClient.post(
-    authorizationEndpoint,
-    headers: headers,
-    body: rawBody,
-  );
+  var response = await httpClient.post(authorizationEndpoint,
+      headers: headers, body: body);
 
   var credentials = handleAccessTokenResponse(
       response, authorizationEndpoint, startTime, scopes?.toList(), delimiter,
