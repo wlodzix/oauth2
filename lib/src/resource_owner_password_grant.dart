@@ -48,6 +48,7 @@ Future<Client> resourceOwnerPasswordGrant(
     Uri authorizationEndpoint, String username, String password,
     {String? identifier,
     String? secret,
+    String? otp,
     Iterable<String>? scopes,
     bool basicAuth = true,
     CredentialsRefreshedCallback? onCredentialsRefreshed,
@@ -61,8 +62,12 @@ Future<Client> resourceOwnerPasswordGrant(
   var body = {
     'grant_type': 'password',
     'username': username,
-    'password': password
+    'password': password,
   };
+
+  if (otp != null) {
+    body['otp'] = otp; // Add new field to the map
+  }
 
   var headers = <String, String>{};
 
